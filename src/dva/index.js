@@ -2,9 +2,11 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { createHashHistory } from 'history';
-import { createStore, combineReducers } from 'redux';
+import { createStore, combineReducers, applyMiddleware } from 'redux';
 import { Provider, connect } from 'react-redux';
-import { NAMASPACE_SEP } from './constant';
+import createSagaMiddleware from 'redux-saga'
+import * as sagaEffects from 'redux-saga/effects';
+import { NAMESPACE_SEP } from './constant';
 
 export { connect }
 export default function (opts = {}) {
@@ -29,7 +31,10 @@ export default function (opts = {}) {
 
   function start(container) {
     const reducers = getReducers(app);
-    app._store = createStore(reducers);
+    const sagas = getSagas(app)//获取saga数组
+    let sagaMiddleware = createSagaMiddleware()
+    app._store = applyMiddleware(sagaMiddleware)(createStore)(reducers);
+    sagas.forEach(sagaMiddleware.run);//run 就是启动saga执行
     const root = createRoot(document.querySelector(container));
     root.render(
       <Provider store={app._store}>{app._router()}</Provider>,
@@ -56,12 +61,59 @@ function getReducers(app) {
   return combineReducers(reducers);
 }
 
-function prefixNamespace(model) {
-  const reducers = model.reducers
-  model.reducers = Object.keys(reducers).reduce((pre, key) => {
-    const newKey = `${model.namespace}${NAMASPACE_SEP}${key}`
-    pre[newKey] = reducers[key]
+function prefix(obj, namespace) {
+  return Object.keys(obj).reduce((pre, key) => {
+    const newKey = `${namespace}${NAMESPACE_SEP}${key}`
+    pre[newKey] = obj[key]
     return pre
   }, {})
+}
+
+function prefixNamespace(model) {
+  const { reducers, effects, namespace } = model || {}
+  if (reducers) {
+    model.reducers = prefix(reducers, namespace)
+  }
+  if (effects) {
+    model.effects = prefix(effects, namespace)
+  }
   return model
+}
+//获取sagas数组
+function getSagas(app) {
+  let sagas = []
+  for (const model of app._models) {
+    //把effects对象变成一个saga
+    sagas.push(function* (params) {
+      for (const key in model.effects) {
+        const watcher = getWatcher(key, model.effects[key], model)
+        yield sagaEffects.fork(watcher) //sagaEffects.fork 可以使每个saga进行非阻塞执行,利用了child process spawn
+      }
+    })
+  }
+  return sagas
+}
+
+function prefixType(type, model) { // effect action 取消namespace 前缀
+  if (type.indexOf('/') === -1) {
+    return `${model.namespace}${NAMESPACE_SEP}${type}`;
+  } else {
+    if (type.startsWith(model.namespace)) {
+      console.error(`Warning: [sagaEffects.put] ${type} should not be prefixed with namespace ${model.namespace}`);
+    }
+  }
+  return type;
+}
+
+function getWatcher(key, effect, model) {
+  function put(action) {
+    return sagaEffects.put({ ...action, type: prefixType(action.type, model) });
+  }
+  return function* () {
+    yield sagaEffects.takeEvery(key, function* (...args) {
+      yield effect(...args, { ...sagaEffects, put })//重写put方法
+
+    })
+
+  }
 }

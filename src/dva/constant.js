@@ -1,1 +1,1 @@
-export const NAMASPACE_SEP ='/'
+export const NAMESPACE_SEP ='/'

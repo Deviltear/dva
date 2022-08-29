@@ -2,7 +2,7 @@ import React from 'react';
 import dva, { connect } from './dva';
 import './style.css';
 
-const delay = (ms = 1000) => new Promise(reslove => setTimeout(() => reslove, ms))
+const delay = (ms = 1000) => new Promise(reslove => setTimeout(reslove, ms))
 // 1. Initialize
 const app = dva();
 
@@ -21,7 +21,7 @@ app.model({
   },
   effects: {
     *asyncAdd(action, { put }) {
-      yield delay(1000)
+      yield delay(500)
       yield put({ type: 'add' })
     }
   }
