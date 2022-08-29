@@ -1,7 +1,8 @@
 import React from 'react';
 import dva, { connect } from './dva';
 import './style.css';
-import { createRoot } from 'react-dom/client';
+
+const delay = (ms = 1000) => new Promise(reslove => setTimeout(() => reslove, ms))
 // 1. Initialize
 const app = dva();
 
@@ -9,20 +10,28 @@ const app = dva();
 // 2. Model
 app.model({
   namespace: 'count',
-  state: 0,
+  state: { number: 0 },
   reducers: {
-    add  (count) { return count + 1 },
-    minus(count) { return count - 1 },
+    add({ number }) {
+      return { number: number + 1 };
+    },
+    minus(state) {
+      return { number: state.number - 1 };
+    }
   },
+  effects: {
+    *asyncAdd(action, { put }) {
+      yield delay(1000)
+      yield put({ type: 'add' })
+    }
+  }
 });
 
 class TestError extends React.Component {
   componentDidCatch(e) {
     alert(e.message);
   }
-  componentDidMount() {
-    // throw new Error('a');
-  }
+
   render() {
     return <div>TestError</div>
   }
@@ -30,14 +39,17 @@ class TestError extends React.Component {
 
 // 3. View
 const App = connect(({ count }) => ({
-  count
-}))(function(props) {
+  number: count.number
+}))(function (props) {
+  console.log(props);
   return (
     <div>
       <TestError />
-      <h2>{ props.count }</h2>
-      <button key="add" onClick={() => { props.dispatch({type: 'add'})}}>+</button>
-      <button key="minus" onClick={() => { props.dispatch({type: 'count/minus'})}}>-</button>
+      <h2>{props.number}</h2>
+      <button key="add" onClick={() => { props.dispatch({ type: 'count/add' }) }}>+</button>
+      <button key="minus" onClick={() => { props.dispatch({ type: 'count/minus' }) }}>-</button>
+      <button key="asyncAdd" onClick={() => { props.dispatch({ type: 'count/asyncAdd' }) }}>asycn +</button>
+
     </div>
   );
 });
