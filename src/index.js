@@ -1,7 +1,8 @@
 import React from 'react';
 import dva, { connect } from './dva';
+import { routerRedux, Switch, Route, Link } from './dva/router';
 import './style.css';
-
+let { ConnectedRouter, push } = routerRedux;
 const delay = (ms = 1000) => new Promise(reslove => setTimeout(reslove, ms))
 // 1. Initialize
 const app = dva();
@@ -24,13 +25,18 @@ app.model({
       yield delay(500)
       yield put({ type: 'add' })
     }
+  },
+  subscriptions: {
+    changeTitle({ history, dispatch }, done) {
+      history.listen(({ pathname }) => {
+        document.title = pathname;
+      });
+      done('我是subscriptions changeTitle changeTitle错误');
+    }
   }
 });
 
 class TestError extends React.Component {
-  componentDidCatch(e) {
-    alert(e.message);
-  }
 
   render() {
     return <div>TestError</div>
@@ -55,7 +61,22 @@ const App = connect(({ count }) => ({
 });
 
 // 4. Router
-app.router(() => <App />);
+app.router(({ history, app }) => {
+  return (
+    <ConnectedRouter history={history}>
+      <>
+        <ul>
+          <li><Link to="/">home</Link></li>
+          <li><Link to="/counter">counter</Link></li>
+        </ul>
+        <Switch>
+          <Route path="/" exact component={App} />
+        </Switch>
+      </>
+    </ConnectedRouter>
+  )
+}
+);
 
 // 5. Start
 app.start('#root');
