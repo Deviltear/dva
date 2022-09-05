@@ -68,6 +68,10 @@ export default function (opts = {}) {
       runSubscription(model.subscriptions);
     }
 
+function injectModel(m) {
+  m=app.model(m)
+}
+
     function createReducer() {
       // const reducerEnhancer = plugin.get('onReducer');
       let extraReducers = plugin.get("extraReducers");
@@ -83,6 +87,7 @@ export default function (opts = {}) {
       document.querySelector(container),
     );
   }
+  // app.model=injectModel.bind(app)
   return app;
 }
 

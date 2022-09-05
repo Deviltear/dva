@@ -2,10 +2,11 @@ import React from 'react';
 import dva, { connect } from './dva';
 import { routerRedux, Switch, Route, Link } from './dva/router';
 import createLoading from './dva/dva-loading';
+import dynamic from './dva/dynamic';
 
+import {sleep} from './utils'
 import './style.css';
 let { ConnectedRouter, push } = routerRedux;
-const delay = (ms = 1000) => new Promise(reslove => setTimeout(reslove, ms))
 // 1. Initialize
 const app = dva();
 app.use(createLoading())
@@ -23,7 +24,7 @@ app.model({
   },
   effects: {
     *asyncAdd(action, { put }) {
-      yield delay(500)
+      yield sleep(500)
       yield put({ type: 'add' })
     }
   },
@@ -40,15 +41,14 @@ app.model({
 class TestError extends React.Component {
 
   render() {
-    return <div>TestError</div>
+    return <div>这是首页</div>
   }
 }
 
 // 3. View
-const App = connect((state) => ({
-  ...state,
-  number: state.count.number,
-  loading:state.loading.models.count
+const App = connect(({count,loading}) => ({
+  number: count.number,
+  loading:loading.models.count
 
 }))(function (props) {
   console.log({props});
@@ -71,6 +71,12 @@ const Home = connect(({ count }) => ({
     </div>
   );
 });
+
+const UsersPage = dynamic({
+  app,
+  models: () => [import('./models/users')],
+  component: () => import('./pages/UserPage')
+});
 // 4. Router
 app.router(({ history, app }) => {
   return (
@@ -79,10 +85,13 @@ app.router(({ history, app }) => {
         <ul>
           <li><Link to="/home">home</Link></li>
           <li><Link to="/counter">counter</Link></li>
+          <li><Link to="/users">users</Link></li>
         </ul>
         <Switch>
           <Route path="/counter" exact component={App} />
           <Route path="/home" exact component={Home} />
+          <Route path="/users" exact component={UsersPage} />
+
         </Switch>
       </>
     </ConnectedRouter>
