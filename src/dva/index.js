@@ -68,10 +68,6 @@ export default function (opts = {}) {
       runSubscription(model.subscriptions);
     }
 
-function injectModel(m) {
-  m=app.model(m)
-}
-
     function createReducer() {
       // const reducerEnhancer = plugin.get('onReducer');
       let extraReducers = plugin.get("extraReducers");
@@ -86,8 +82,21 @@ function injectModel(m) {
       <Provider store={app._store}>{app._router({ app, history })}</Provider>,
       document.querySelector(container),
     );
+
+    app.model = injectModel.bind(app);
+    function injectModel(m) {
+      m = model(m); //给reducers effect名字添加命名空间前缀 添加app_models里去
+      initialReducers[m.namespace] = getReducer(m);
+      app._store.replaceReducer(createReducer()); //用新的reducer替换掉老的reducer,派发默认动作，会让reducer执行，执行过完后会给 users赋上默认值
+      if (m.effects) {
+        sagaMiddleware.run(getSaga(m, onEffect));
+      }
+      if (m.subscriptions) {
+        runSubscription(m.subscriptions);
+      }
+    }
   }
-  // app.model=injectModel.bind(app)
+
   return app;
 }
 
@@ -126,20 +135,24 @@ function getSagas(app, onEffect) {
   let sagas = [];
   for (const model of app._models) {
     //把effects对象变成一个saga
-    sagas.push(function* (params) {
-      for (const key in model.effects) {
-        const watcher = getWatcher(key, model.effects[key], model, onEffect);
-        const task = yield sagaEffects.fork(watcher); //sagaEffects.fork 可以使每个saga进行非阻塞执行,利用了child process spawn
-        yield sagaEffects.fork(function* () {
-          yield sagaEffects.take(`${model.namespace}/@@CANCEL_EFFECTS`);
-          yield sagaEffects.cancel(task);
-        });
-      }
-    });
+    sagas.push(getSaga(model, onEffect));
   }
   return sagas;
 }
-
+//
+function getSaga(model, onEffect) {
+  const { effects } = model;
+  return function* () {
+    for (const key in effects) {
+      const watcher = getWatcher(key, effects[key], model, onEffect);
+      const task = yield sagaEffects.fork(watcher); //sagaEffects.fork 可以使每个saga进行非阻塞执行,利用了child process spawn
+      yield sagaEffects.fork(function* () {
+        yield sagaEffects.take(`${model.namespace}/@@CANCEL_EFFECTS`);
+        yield sagaEffects.cancel(task);
+      });
+    }
+  };
+}
 function prefixType(type, model) {
   // effect action 取消namespace 前缀
   if (type.indexOf("/") === -1) {

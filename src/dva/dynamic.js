@@ -18,15 +18,14 @@ export default function dynamic(config) {
         component(),
       ]);
 
-      resolveModules = resolveModules.map((m) => m.defult || m);
-      AsyncComponent = AsyncComponent.defult || AsyncComponent;
+      resolveModules = resolveModules.map((m) => m.default || m);
+      AsyncComponent = AsyncComponent.default || AsyncComponent;
       resolveModules.forEach((m) => app.model(m));
       this.setState({ AsyncComponent });
     }
 
     render() {
       const { AsyncComponent } = this.state;
-      console.log(AsyncComponent);
       const { LoadingComponent } = this;
       return AsyncComponent ? (
         <UserPage {...this.props} />

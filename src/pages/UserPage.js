@@ -2,10 +2,11 @@ import React from "react";
 import { connect } from '../dva';
 
  function UserPage(props) {
-  const { userlist=[],dispath } = props;
+  const { userlist=[],dispatch ,loading} = props;
+  console.log(props);
   return (
     <>
-    <button onClick={()=>dispath({ type: 'users/asyncAdd' })}>添加用户</button>
+    <button disabled={loading} onClick={()=>dispatch({ type: 'users/asyncAdd' })}>添加用户</button>
       <ul>
         {userlist.map((user) => (
           <li key={user.id}>{user.name}</li>
@@ -16,5 +17,9 @@ import { connect } from '../dva';
 }
 
 export default connect(
-  state => state.users
+  ({users,loading}) => ({
+    ...users,
+    loading:loading.effects['users/asyncAdd']
+  
+  })
 )(UserPage);

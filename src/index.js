@@ -52,12 +52,13 @@ const App = connect(({count,loading}) => ({
 
 }))(function (props) {
   console.log({props});
+  const {loading,number,dispatch} =props||{}
   return (
     <div>
-      <h2>{props.loading ? <span>执行中...</span> : props.number}</h2>
-      <button key="add" onClick={() => { props.dispatch({ type: 'count/add' }) }}>+</button>
-      <button key="minus" onClick={() => { props.dispatch({ type: 'count/minus' }) }}>-</button>
-      <button key="asyncAdd" onClick={() => { props.dispatch({ type: 'count/asyncAdd' }) }}>asycn +</button>
+      <h2>{loading ? <span>执行中...</span> : number}</h2>
+      <button key="add" onClick={() => { dispatch({ type: 'count/add' }) }}>+</button>
+      <button key="minus" onClick={() => { dispatch({ type: 'count/minus' }) }}>-</button>
+      <button key="asyncAdd" disabled={loading} onClick={() => { dispatch({ type: 'count/asyncAdd' }) }}>asycn +</button>
 
     </div>
   );
@@ -90,7 +91,7 @@ app.router(({ history, app }) => {
         <Switch>
           <Route path="/counter" exact component={App} />
           <Route path="/home" exact component={Home} />
-          <Route path="/users" exact component={UsersPage} />
+          <Route path="/users"  component={UsersPage} />
 
         </Switch>
       </>
