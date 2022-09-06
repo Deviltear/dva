@@ -3,7 +3,6 @@ import { connect } from '../dva';
 
  function UserPage(props) {
   const { userlist=[],dispatch ,loading} = props;
-  console.log(props);
   return (
     <>
     <button disabled={loading} onClick={()=>dispatch({ type: 'users/asyncAdd' })}>添加用户</button>

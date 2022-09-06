@@ -51,9 +51,11 @@ export default function (opts = {}) {
     const rootReducer = createReducer();
     const sagas = getSagas(app, onEffect); //获取saga数组
     let sagaMiddleware = createSagaMiddleware();
+    const loggerMiddlewares = plugin.get('onAction');
     app._store = applyMiddleware(
       routerMiddleware(history),
       sagaMiddleware,
+      ...loggerMiddlewares
     )(createStore)(rootReducer);
     function runSubscription(subscriptions = {}) {
       for (let key in subscriptions) {

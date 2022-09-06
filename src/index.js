@@ -3,6 +3,7 @@ import dva, { connect } from './dva';
 import { routerRedux, Switch, Route, Link } from './dva/router';
 import createLoading from './dva/dva-loading';
 import dynamic from './dva/dynamic';
+import logger from './dva/redux-logger';
 
 import {sleep} from './utils'
 import './style.css';
@@ -10,6 +11,9 @@ let { ConnectedRouter, push } = routerRedux;
 // 1. Initialize
 const app = dva();
 app.use(createLoading())
+app.use({
+  onAction: logger
+});
 // 2. Model
 app.model({
   namespace: 'count',
@@ -51,7 +55,6 @@ const App = connect(({count,loading}) => ({
   loading:loading.models.count
 
 }))(function (props) {
-  console.log({props});
   const {loading,number,dispatch} =props||{}
   return (
     <div>

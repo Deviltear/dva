@@ -1,7 +1,8 @@
 const hooks = [
   "onEffect", // enhance effect
   "extraReducers", //add extra reducers
-];
+  "onAction" //add action trigger
+ ];
 
 export function filterHooks(option = {}) {
   return Object.keys(option).reduce((pre, cur) => {
